@@ -2,52 +2,53 @@ package main
 
 import (
 	"fmt"
-	"net"
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	fmt.Println("Listening on port 8080...")
-	listener, err := net.Listen("tcp", "localhost:8080")
-
+	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Couldn't listen on port 8080: ", err.Error())
+		log.Fatal("Error loading .env file")
+	}
+
+	portString := os.Getenv("APP_PORT")
+	if portString == "" {
+		log.Fatal("Environment variable PORT must be set")
 		return
 	}
-	defer listener.Close()
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			fmt.Println("Couldn't accept connection: ", err.Error())
-			return
-		}
-		defer conn.Close()
+	fmt.Println("Port:", portString)
 
-		go handle_connection(conn)
+	router := chi.NewRouter()
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
+
+	v1Router := chi.NewRouter()
+	router.Mount("/v1", v1Router)
+	// v1Router.Mount()
+	v1Router.Get("/healthz", handlerReadiness)
+	v1Router.Get("/err", handlerReadinessErr)
+
+	server := &http.Server{
+		Handler: router,
+		Addr:    ":" + portString,
 	}
-}
 
-func handle_connection(conn net.Conn) {
-	defer conn.Close()
-	fmt.Println("Accepted connection from ", conn.RemoteAddr())
-
-	for {
-		buf := make([]byte, 1024)
-		n, err := conn.Read(buf)
-		if err != nil {
-			if err.Error() == "EOF" {
-				fmt.Println("Connection closed")
-				return
-			}
-			fmt.Println("Couldn't read from connection: ", err.Error())
-			return
-		}
-		fmt.Println("Received: ", string(buf[:n]))
-
-		_, err = conn.Write(buf[:n])
-		if err != nil {
-			fmt.Println("Couldn't write to connection: ", err.Error())
-			return
-		}
+	log.Printf("Server starting on port %v...", portString)
+	err = server.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
