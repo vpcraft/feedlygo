@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,7 +10,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	"github.com/vpcraft/feedlygo/internal/db"
+
+	_ "github.com/lib/pq"
 )
+
+type apiConfig struct {
+	DB *db.Queries
+}
 
 func main() {
 	err := godotenv.Load()
@@ -23,7 +31,24 @@ func main() {
 		return
 	}
 
+	dbUrlString := os.Getenv("DB_URL")
+	if dbUrlString == "" {
+		log.Fatal("Environment variable DB_URL must be set")
+		return
+	}
+
 	fmt.Println("Port:", portString)
+	fmt.Println("DB_URL:", dbUrlString)
+
+	conn, err := sql.Open("postgres", dbUrlString)
+	if err != nil {
+		log.Fatal("Unable to connect to database:", err)
+		return
+	}
+
+	apiCfg := apiConfig{
+		DB: db.New(conn),
+	}
 
 	router := chi.NewRouter()
 	router.Use(cors.Handler(cors.Options{
