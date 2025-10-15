@@ -46,6 +46,7 @@ func main() {
 		return
 	}
 
+	// We can inject this dependency into our handlers to access the database
 	apiCfg := apiConfig{
 		DB: db.New(conn),
 	}
@@ -65,6 +66,7 @@ func main() {
 	// v1Router.Mount()
 	v1Router.Get("/healthz", handlerReadiness)
 	v1Router.Get("/err", handlerReadinessErr)
+	v1Router.Post("/users", apiCfg.handlerCreateUser)
 
 	server := &http.Server{
 		Handler: router,
