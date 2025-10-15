@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vpcraft/feedlygo/internal/auth"
 	"github.com/vpcraft/feedlygo/internal/db"
 )
 
@@ -39,23 +38,6 @@ func (apiCfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Reques
 	respondWithJSON(w, 201, serializerUser(user))
 }
 
-func (apiCfg *apiConfig) handlerGetUserByAPIKey(w http.ResponseWriter, r *http.Request) {
-	auth_key, err := auth.GetBasicAuthAPIKey(r.Header)
-	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Error while getting API key: %v", err))
-		return
-	}
-
-	user, err := apiCfg.DB.GetUserByAPIKey(r.Context(), auth_key)
-	if err != nil {
-		respondWithError(w, 400, fmt.Sprintf("Error while getting user: %v", err))
-		return
-	}
-
-	if user == (db.User{}) {
-		respondWithError(w, 400, "User not found")
-		return
-	}
-
+func (apiCfg *apiConfig) handlerGetUserByAPIKey(w http.ResponseWriter, r *http.Request, user db.User) {
 	respondWithJSON(w, 200, serializerUser(user))
 }
