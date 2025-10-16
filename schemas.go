@@ -23,6 +23,14 @@ type Feed struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type Follow struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	FeedID    uuid.UUID `json:"feed_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 func serializerUser(user db.User) User {
 	return User{
 		ID:        user.ID,
@@ -50,4 +58,23 @@ func serializerFeeds(feeds []db.Feed) []Feed {
 	}
 
 	return resFeeds
+}
+
+func serializerFollow(follow db.FeedFollow) Follow {
+	return Follow{
+		ID:        follow.ID,
+		UserID:    follow.UserID,
+		FeedID:    follow.FeedID,
+		CreatedAt: follow.CreatedAt,
+		UpdatedAt: follow.UpdatedAt,
+	}
+}
+
+func serializerFollows(follows []db.FeedFollow) []Follow {
+	resFollows := []Follow{}
+	for _, dbFollow := range follows {
+		resFollows = append(resFollows, serializerFollow(dbFollow))
+	}
+
+	return resFollows
 }

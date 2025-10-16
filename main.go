@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -37,9 +36,6 @@ func main() {
 		return
 	}
 
-	fmt.Println("Port:", portString)
-	fmt.Println("DB_URL:", dbUrlString)
-
 	conn, err := sql.Open("postgres", dbUrlString)
 	if err != nil {
 		log.Fatal("Unable to connect to database:", err)
@@ -63,7 +59,6 @@ func main() {
 
 	v1Router := chi.NewRouter()
 	router.Mount("/v1", v1Router)
-	// v1Router.Mount()
 	v1Router.Get("/healthz", handlerReadiness)
 	v1Router.Get("/err", handlerReadinessErr)
 	v1Router.Post("/users", apiCfg.handlerCreateUser)
@@ -71,6 +66,9 @@ func main() {
 	v1Router.Post("/feeds", apiCfg.middlewareAuth(apiCfg.handlerCreateFeed))
 	// v1Router.Get("/feeds", apiCfg.middlewareAuth(apiCfg.handlerGetFeedByID))
 	v1Router.Get("/feeds", apiCfg.handlerGetAllFeeds)
+	v1Router.Post("/follows/create", apiCfg.middlewareAuth(apiCfg.handlerFollowToFeed))
+	v1Router.Post("/follows/delete", apiCfg.middlewareAuth(apiCfg.handlerUnfollowFromFeed))
+	v1Router.Get("/follows", apiCfg.middlewareAuth(apiCfg.handlerGetFeedFollows))
 
 	server := &http.Server{
 		Handler: router,

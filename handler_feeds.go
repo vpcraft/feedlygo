@@ -67,6 +67,5 @@ func (apiCfg *apiConfig) handlerGetAllFeeds(w http.ResponseWriter, r *http.Reque
 	}
 
 	serializedFeeds := serializerFeeds(feeds)
-	fmt.Println(serializedFeeds)
 	respondWithJSON(w, 200, serializedFeeds)
 }
