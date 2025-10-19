@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/xml"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -77,4 +80,54 @@ func serializerFollows(follows []db.FeedFollow) []Follow {
 	}
 
 	return resFollows
+}
+
+// ======= Feed XML serialization =======
+
+type RSSFeed struct {
+	XMLName string     `xml:"rss"`
+	Channel RSSChannel `xml:"channel"`
+}
+
+type RSSChannel struct {
+	Title         string    `xml:"title"`
+	Link          string    `xml:"link"`
+	Description   string    `xml:"description"`
+	Generator     string    `xml:"generator"`
+	Language      string    `xml:"language"`
+	LastBuildDate string    `xml:"lastBuildDate"`
+	Item          []RSSItem `xml:"item"`
+}
+
+type RSSItem struct {
+	Title       string `xml:"title"`
+	Link        string `xml:"link"`
+	PubDate     string `xml:"pubDate"`
+	Guid        string `xml:"guid"`
+	Description string `xml:"description"`
+}
+
+func serializeFeedXML(url string) (RSSFeed, error) {
+	httpClient := http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		return RSSFeed{}, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return RSSFeed{}, err
+	}
+
+	rssFeed := RSSFeed{}
+	err = xml.Unmarshal(data, &rssFeed)
+	if err != nil {
+		return RSSFeed{}, err
+	}
+
+	return rssFeed, nil
 }
