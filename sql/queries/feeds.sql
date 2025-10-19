@@ -13,9 +13,8 @@ SELECT * FROM feeds;
 
 -- name: GetNextFeedsToFetch :many
 SELECT * FROM feeds
-WHERE last_fetched_at < $1
 ORDER BY last_fetched_at ASC NULLS FIRST
-LIMIT $2;
+LIMIT $1;
 
 -- name: MarkFeedAsFetched :one
 UPDATE feeds 
